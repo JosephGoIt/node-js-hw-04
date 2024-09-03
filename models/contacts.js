@@ -1,8 +1,15 @@
-// models/contacts.js
 const Contact = require('./contact');
 
-const listContacts = async () => {
-  return await Contact.find({});
+const listContacts = async (userId, { page = 1, limit = 20, favorite }) => {
+  const skip = (page - 1) * limit;
+  const filter = { owner: userId };
+  if (favorite !== undefined) {
+    filter.favorite = favorite === 'true';
+  }
+  return await Contact.find(filter)
+    .skip(skip)
+    .limit(Number(limit))
+    .populate('owner', 'email subscription');
 };
 
 const getContactById = async (contactId) => {
@@ -10,20 +17,20 @@ const getContactById = async (contactId) => {
 };
 
 const removeContact = async (contactId) => {
-  const result = await Contact.findByIdAndDelete(contactId);
-  return result !== null;
+  return await Contact.findByIdAndDelete(contactId);
 };
 
 const addContact = async (body) => {
-  return await Contact.create(body);
+  const contact = new Contact(body);
+  return await contact.save();
 };
 
 const updateContact = async (contactId, body) => {
   return await Contact.findByIdAndUpdate(contactId, body, { new: true });
 };
 
-const updateStatusContact = async (contactId, favorite) => {
-  return await Contact.findByIdAndUpdate(contactId, { favorite }, { new: true });
+const updateStatusContact = async (contactId, body) => {
+  return await Contact.findByIdAndUpdate(contactId, body, { new: true });
 };
 
 module.exports = {
@@ -32,5 +39,5 @@ module.exports = {
   removeContact,
   addContact,
   updateContact,
-  updateStatusContact, // Export the new function
+  updateStatusContact,
 };
